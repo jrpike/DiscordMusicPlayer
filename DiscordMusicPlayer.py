@@ -11,6 +11,7 @@ import multiprocessing as mp
 import mysql.connector
 import os
 from pytube import YouTube
+import subprocess
 import sys
 import time
 import threading
@@ -27,7 +28,8 @@ def is_video(filename):
 	filename = filename.lower()
 	filename = filename.replace("https://", "")
 	filename = filename.replace("http://", "")
-	return (filename.startswith("youtube.com") or filename.startswith("www.youtube.com") or filename.startswith("www.youtu.be"))
+	filename = filename.replace("www.", "")
+	return (filename.startswith("youtube.com") or filename.startswith("youtu.be"))
 
 def get_current_url(hostname, username, password):
 	db_conn = mysql.connector.connect(
@@ -111,7 +113,8 @@ def on_message_ind(message):
 					row_id = latest_row[0]
 					url = latest_row[1]
 					
-					os.system("youtube-dl -x --audio-format mp3 --output \"tmp_song.mp3\" " + url);
+					p = subprocess.Popen(["youtube-dl", "-x", "--audio-format", "mp3", "--output", "tmp_song.mp3", url])
+					p.wait(30)
 					os.system("ffmpeg -i tmp_song.mp3 tmp_song.wav")
 
 					duration = 0
