@@ -11,5 +11,6 @@
 `sudo chmod a+rx /usr/local/bin/youtube-dl`<br />
 `sudo pip3 install mysql-connector`<br />
 `sudo pip3 install mysql-connector-python`<br />
+`sudo pip3 install pytube'<br />
 `sudo mysql -u root`<br />
 >`SOURCE setup.sql`<br />
