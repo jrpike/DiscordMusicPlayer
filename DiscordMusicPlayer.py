@@ -46,7 +46,7 @@ def get_current_url(hostname, username, password):
 
 	url_row = None
 	try:
-		url_row = db_curr.next()
+		url_row = db_curr.fetchall()[0]
 	except Exception as e:
 		db_conn.commit()
 		db_curr.close()
