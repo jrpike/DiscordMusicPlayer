@@ -29,10 +29,6 @@ def clean_yt_url(url):
 
 def clean_files():
 	try:
-		os.system("rm -f \"tmp_song.mp3\"")
-	except Exception as e:
-		print(e)
-	try:
 		os.system("rm -f \"tmp_song.wav\"")
 	except Exception as e:
 		print(e)
@@ -127,9 +123,8 @@ def on_message_ind(message):
 						url = latest_row[1]
 						url = clean_yt_url(url)
 						
-						p = subprocess.Popen(["youtube-dl", "-q", "-x", "--no-part", "--abort-on-error", "--socket-timeout", "15", "--audio-format", "mp3", "--output", "tmp_song.mp3", url])
+						p = subprocess.Popen(["youtube-dl", "-q", "-x", "--no-part", "--abort-on-error", "--socket-timeout", "15", "--audio-format", "wav", "--output", "tmp_song.wav", url])
 						p.wait(30)
-						os.system("ffmpeg -i tmp_song.mp3 tmp_song.wav")
 
 						duration = 0
 						with contextlib.closing(wave.open("tmp_song.wav", "r")) as f:
