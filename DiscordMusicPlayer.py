@@ -24,6 +24,19 @@ class Attribs():
 	vc = None
 	skip_flag = mp.Value('d', 0)
 
+def clean_yt_url(url):
+	return url.split("&")[0]
+
+def clean_files():
+	try:
+		os.system("rm -f \"tmp_song.mp3\"")
+	except Exception as e:
+		print(e)
+	try:
+		os.system("rm -f \"tmp_song.wav\"")
+	except Exception as e:
+		print(e)
+
 def is_video(filename):
 	filename = filename.lower()
 	filename = filename.replace("https://", "")
@@ -105,36 +118,40 @@ def on_message_ind(message):
 		if author.voice is not None:
 			channel = author.voice.channel
 
-		if content == "-bstart" and channel is not None:
-
+		if content == "-bjoin" and channel is not None:
 			while Attribs.vc and Attribs.vc.is_connected():
-				latest_row = get_current_url("localhost", "host", Attribs.db_pass)
-				if latest_row is not None:
-					row_id = latest_row[0]
-					url = latest_row[1]
-					
-					p = subprocess.Popen(["youtube-dl", "-x", "--audio-format", "mp3", "--output", "tmp_song.mp3", url])
-					p.wait(30)
-					os.system("ffmpeg -i tmp_song.mp3 tmp_song.wav")
+				try:
+					latest_row = get_current_url("localhost", "host", Attribs.db_pass)
+					if latest_row is not None:
+						row_id = latest_row[0]
+						url = latest_row[1]
+						url = clean_yt_url(url)
+						
+						p = subprocess.Popen(["youtube-dl", "-q", "-x", "--no-part", "--abort-on-error", "--socket-timeout", "15", "--audio-format", "mp3", "--output", "tmp_song.mp3", url])
+						p.wait(30)
+						os.system("ffmpeg -i tmp_song.mp3 tmp_song.wav")
 
-					duration = 0
-					with contextlib.closing(wave.open("tmp_song.wav", "r")) as f:
-						frames = f.getnframes()
-						rate = f.getframerate()
-						duration = frames / float(rate)
+						duration = 0
+						with contextlib.closing(wave.open("tmp_song.wav", "r")) as f:
+							frames = f.getnframes()
+							rate = f.getframerate()
+							duration = frames / float(rate)
 
-					Attribs.vc.play(discord.FFmpegPCMAudio("tmp_song.wav"), after=lambda e: print('done', e))
+						Attribs.vc.play(discord.FFmpegPCMAudio("tmp_song.wav"), after=lambda e: print('done', e))
 
-					while Attribs.vc.is_connected() and Attribs.vc.is_playing() and Attribs.skip_flag.value == 0:
+						while Attribs.vc.is_connected() and Attribs.vc.is_playing() and Attribs.skip_flag.value == 0:
+							time.sleep(1)
+
+						Attribs.skip_flag.value = 0
+						clean_files()
+						set_done("localhost", "host", Attribs.db_pass, row_id)
+						Attribs.vc.stop()
+					else:
 						time.sleep(1)
-
-					Attribs.skip_flag.value = 0
-					os.system("rm -f \"tmp_song.mp3\"")
-					os.system("rm -f \"tmp_song.wav\"")
+				except Exception as e:
+					print(e)
+					clean_files()
 					set_done("localhost", "host", Attribs.db_pass, row_id)
-					Attribs.vc.stop()
-				else:
-					time.sleep(1)
 
 		elif content.startswith("-badd"):
 			url = content.split(" ")
@@ -162,10 +179,14 @@ async def on_message(message):
 
 		if content == "-bjoin":
 			Attribs.vc = await channel.connect()
+			p = mp.Process(target = on_message_ind, args = (message,))
+			p.start()
 		elif content == "-bleave":
 			server = message.guild.voice_client
 			await server.disconnect()
 			Attribs.vc = None
+			clean_files()
+
 		else:
 			p = mp.Process(target = on_message_ind, args = (message,))
 			p.start()
