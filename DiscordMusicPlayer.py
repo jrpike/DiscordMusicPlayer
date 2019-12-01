@@ -1,3 +1,5 @@
+from PreQueueDaemon import start_pq_daemon
+
 import asyncio
 import concurrent.futures
 import contextlib
@@ -92,21 +94,12 @@ def add_song(hostname, username, password, url):
 		passwd = password
 	)
 
-	yt = YouTube(url = url)
-
-	title = yt.player_config_args["player_response"]["videoDetails"]["title"]
-	duration = yt.player_config_args["player_response"]["videoDetails"]["lengthSeconds"]
-	thumbnail_url = yt.player_config_args["player_response"]["videoDetails"]["thumbnail"]["thumbnails"][0]["url"].replace("hqdefault", "mqdefault").split("?")[0]
-
-	if duration == 0:
-		return
-
 	db_curr = db_conn.cursor()
 
-	ps = "INSERT INTO song_queue (url, status, title, thumbnail_url, duration) VALUES (%s, %s, %s, %s, %s)"
+	ps = "INSERT INTO pre_queue (url, status) VALUES (%s, %s)"
 
 	db_curr.execute("USE music_player")
-	db_curr.execute(ps, (url, 0, title, thumbnail_url, duration))
+	db_curr.execute(ps, (url, 0))
 
 	db_conn.commit()
 	db_curr.close()
@@ -217,7 +210,9 @@ def main():
 
 	Attribs.db_pass = getpass.getpass()
 
+	start_pq_daemon("localhost", "host", Attribs.db_pass)
 	client.run(token)
+
 
 if __name__ == "__main__":
 	main()
