@@ -12,5 +12,9 @@
 `sudo pip3 install mysql-connector`<br />
 `sudo pip3 install mysql-connector-python`<br />
 `sudo pip3 install pytube'<br />
+Find lib_mysql_udf_sys on GitHub<br />
+`sudo apt install libmysqlclient-dev'<br />
+Find lib_mysql_udf_sys on GitHub<br />
+Update make file to libmysqlclient-dev<br />
 `sudo mysql -u root`<br />
 >`SOURCE setup.sql`<br />
