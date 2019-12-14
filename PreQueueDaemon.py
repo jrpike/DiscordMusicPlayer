@@ -2,14 +2,29 @@ import time
 import mysql.connector
 import multiprocessing as mp
 
+from Attributes import Attribs
+from flask import Flask, request, jsonify
 from pytube import YouTube
 
-def add_pq_row(hostname, username, password, url):
+def is_video(filename):
+	if filename is None:
+		return False
+
+	filename = filename.lower()
+	filename = filename.replace("https://", "")
+	filename = filename.replace("http://", "")
+	filename = filename.replace("www.", "")
+	return (filename.startswith("youtube.com") or filename.startswith("youtu.be"))
+
+def send_new_song(url):
 	db_conn = mysql.connector.connect(
-		host = hostname,
-		user = username,
-		passwd = password
+		host = Attribs.db_hostname,
+		user = Attribs.db_user,
+		passwd = Attribs.db_pass
 	)
+
+	if not is_video(url):
+		return
 
 	yt = YouTube(url = url)
 	title = yt.player_config_args["player_response"]["videoDetails"]["title"]
@@ -30,55 +45,32 @@ def add_pq_row(hostname, username, password, url):
 	db_conn.commit()
 	db_curr.close()
 
-def set_pq_row_done(hostname, username, password, row_id):
-	db_conn = mysql.connector.connect(
-		host = hostname,
-		user = username,
-		passwd = password
-	)
+app = Flask(__name__)
 
-	db_curr = db_conn.cursor()
+@app.route("/", methods = ["POST"])
+def receive_req():
+	req_json = None
+	req_type = None
+	try:
+		req_json = request.get_json()
+		req_type = req_json["type"]
 
-	db_curr.execute("USE music_player")
-	db_curr.execute("UPDATE pre_queue SET status = 1 WHERE id = " + str(row_id))
-
-	db_conn.commit()
-	db_curr.close()
-
-def pq_daemon_thread(hostname, username, password):
-	while True:
-		db_conn = mysql.connector.connect(
-			host = hostname,
-			user = username,
-			passwd = password
-		)
-
-		db_curr = db_conn.cursor()
-		db_curr.execute("USE music_player")
-		db_curr.execute("SELECT * FROM pre_queue WHERE status = 0")
-
-		pre_rows = None
 		try:
-			pre_rows = db_curr.fetchall()
+			if (req_type == "new"):
+				req_url = req_json["url"]
+				send_new_song(req_url)
 		except Exception as e:
-			db_conn.commit()
-			db_curr.close()
-			return None
+			print("Error adding url: " + req_url)
 
-		ids = []
-		for pre_row in pre_rows:
-			ids.append(pre_row[0])
-			url = pre_row[1]
-			add_pq_row(hostname, username, password, url)
+	except Exception as e:
+		print("Invalid request: " + str(request.get_data()))
+		return "0"
 
-		db_conn.commit()
-		db_curr.close()
+	return "1"
 
-		for id in ids:
-			set_pq_row_done(hostname, username, password, id)
+def listener_thread():
+	app.run(port = 5000)
 
-		time.sleep(0.5)
-
-def start_pq_daemon(hostname, username, password):
-	p = mp.Process(target = pq_daemon_thread, args = (hostname, username, password,))
+def start_listener():
+	p = mp.Process(target = listener_thread)
 	p.start()

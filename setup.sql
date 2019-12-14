@@ -10,8 +10,3 @@ title VARCHAR(100),
 duration INT,
 status BOOLEAN
 )
-CREATE TABLE pre_queue (
-id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-url VARCHAR(100),
-status BOOLEAN
-)

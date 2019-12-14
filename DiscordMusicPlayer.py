@@ -1,4 +1,5 @@
-from PreQueueDaemon import start_pq_daemon
+from PreQueueDaemon import start_listener
+from Attributes import Attribs
 
 import asyncio
 import concurrent.futures
@@ -21,11 +22,6 @@ import wave
 
 client = discord.Client()
 
-class Attribs():
-	db_pass = None
-	vc = None
-	skip_flag = mp.Value('d', 0)
-
 def clean_yt_url(url):
 	return url.split("&")[0]
 
@@ -39,18 +35,11 @@ def clean_files():
 	except Exception as e:
 		print(e)
 
-def is_video(filename):
-	filename = filename.lower()
-	filename = filename.replace("https://", "")
-	filename = filename.replace("http://", "")
-	filename = filename.replace("www.", "")
-	return (filename.startswith("youtube.com") or filename.startswith("youtu.be"))
-
-def get_current_url(hostname, username, password):
+def get_current_url():
 	db_conn = mysql.connector.connect(
-		host = hostname,
-		user = username,
-		passwd = password
+		host = Attribs.db_hostname,
+		user = Attribs.db_user,
+		passwd = Attribs.db_pass
 	)
 
 	db_curr = db_conn.cursor()
@@ -72,11 +61,11 @@ def get_current_url(hostname, username, password):
 	db_curr.close()
 	return url_row
 
-def set_done(hostname, username, password, row_id):
+def set_done(row_id):
 	db_conn = mysql.connector.connect(
-		host = hostname,
-		user = username,
-		passwd = password
+		host = Attribs.db_hostname,
+		user = Attribs.db_user,
+		passwd = Attribs.db_pass
 	)
 
 	db_curr = db_conn.cursor()
@@ -89,9 +78,9 @@ def set_done(hostname, username, password, row_id):
 
 def add_song(hostname, username, password, url):
 	db_conn = mysql.connector.connect(
-		host = hostname,
-		user = username,
-		passwd = password
+		host = Attribs.db_hostname,
+		user = Attribs.db_user,
+		passwd = Attribs.db_pass
 	)
 
 	db_curr = db_conn.cursor()
@@ -123,7 +112,7 @@ def on_message_ind(message):
 		if content == "-bjoin" and channel is not None:
 			while Attribs.vc and Attribs.vc.is_connected():
 				try:
-					latest_row = get_current_url("localhost", "host", Attribs.db_pass)
+					latest_row = get_current_url()
 					if latest_row is not None:
 						row_id = latest_row[0]
 						url = latest_row[1]
@@ -142,23 +131,23 @@ def on_message_ind(message):
 						Attribs.vc.play(discord.FFmpegPCMAudio("tmp_song.wav"), after=lambda e: print('done', e))
 
 						while Attribs.vc.is_connected() and Attribs.vc.is_playing() and Attribs.skip_flag.value == 0:
-							time.sleep(1)
+							time.sleep(0.5)
 
 						Attribs.skip_flag.value = 0
 						clean_files()
-						set_done("localhost", "host", Attribs.db_pass, row_id)
+						set_done(row_id)
 						Attribs.vc.stop()
 					else:
-						time.sleep(1)
+						time.sleep(0.5)
 				except Exception as e:
 					print(e)
 					clean_files()
-					set_done("localhost", "host", Attribs.db_pass, row_id)
+					set_done(row_id)
 
 		elif content.startswith("-badd"):
 			url = content.split(" ")
-			if len(url) > 1 and is_video(url[1]):
-				add_song("localhost", "host", Attribs.db_pass, url[1])
+			if len(url) > 1:
+				send_new_song(url[1])
 
 		elif content == ("-bskip"):
 			Attribs.skip_flag.value = 1
@@ -197,7 +186,6 @@ async def on_message(message):
 		print(e)
 	
 def main():
-
 	if len(sys.argv) != 2:
 		print("Usage: $python3 DiscordMusicPlayer.py <token_file>")
 		return
@@ -210,7 +198,7 @@ def main():
 
 	Attribs.db_pass = getpass.getpass()
 
-	start_pq_daemon("localhost", "host", Attribs.db_pass)
+	start_listener()
 	client.run(token)
 
 
