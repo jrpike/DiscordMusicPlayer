@@ -1,4 +1,5 @@
 from PreQueueDaemon import start_listener
+from PreQueueDaemon import send_new_song
 from Attributes import Attribs
 
 import asyncio
@@ -119,7 +120,7 @@ def on_message_ind(message):
 						url = clean_yt_url(url)
 						
 						p = subprocess.Popen(["youtube-dl", "-q", "-x", "--no-part", "--abort-on-error", "--socket-timeout", "15", "--audio-format", "mp3", "--output", "tmp_song.mp3", url])
-						p.wait(30)
+						p.wait()
 						os.system("ffmpeg -i tmp_song.mp3 tmp_song.wav")
 
 						duration = 0
