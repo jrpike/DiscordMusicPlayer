@@ -47,7 +47,7 @@ def send_new_song(url):
 
 app = Flask(__name__)
 
-@app.route("/", methods = ["POST"])
+@app.route("/mp", methods = ["POST"])
 def receive_req():
 	req_json = None
 	req_type = None
