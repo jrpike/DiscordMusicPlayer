@@ -1,6 +1,7 @@
 import time
 import mysql.connector
 import multiprocessing as mp
+import json
 
 from Attributes import Attribs
 from flask import Flask, request, jsonify
@@ -47,12 +48,13 @@ def send_new_song(url):
 
 app = Flask(__name__)
 
-@app.route("/mp", methods = ["POST"])
+@app.route("/postmethod", methods = ["POST"])
 def receive_req():
+
 	req_json = None
 	req_type = None
 	try:
-		req_json = request.get_json()
+		req_json = json.loads(request.data)
 		req_type = req_json["type"]
 
 		try:
@@ -69,7 +71,7 @@ def receive_req():
 	return "1"
 
 def listener_thread():
-	app.run(port = 5000)
+	app.run(host = '0.0.0.0', port = 5000)
 
 def start_listener():
 	p = mp.Process(target = listener_thread)
