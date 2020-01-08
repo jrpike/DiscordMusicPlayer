@@ -10,4 +10,6 @@ title VARCHAR(100),
 duration INT,
 status BOOLEAN
 );
-
+ALTER DATABASE music_player CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+ALTER TABLE song_queue CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE song_queue CHANGE title title VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
