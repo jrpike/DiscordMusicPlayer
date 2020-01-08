@@ -112,6 +112,7 @@ def receive_req():
 		except Exception as e:
 			print("Error adding url: " + str(req_json))
 			print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno))
+			print(e)
 
 	except Exception as e:
 		print("Invalid request: " + str(request.get_data()))
