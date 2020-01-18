@@ -121,7 +121,9 @@ def on_message_ind(message):
 						
 						p = subprocess.Popen(["youtube-dl", "-q", "-x", "--no-part", "--abort-on-error", "--socket-timeout", "15", "--audio-format", "mp3", "--output", "tmp_song.mp3", url])
 						p.wait()
-						os.system("ffmpeg -i tmp_song.mp3 tmp_song.wav")
+
+						p = subprocess.Popen(["ffmpeg", "-i", "tmp_song.mp3", "tmp_song.wav"])
+						p.wait()
 
 						duration = 0
 						with contextlib.closing(wave.open("tmp_song.wav", "r")) as f:
