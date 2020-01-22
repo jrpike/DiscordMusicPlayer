@@ -111,7 +111,7 @@ def on_message_ind(message):
 			channel = author.voice.channel
 
 		if content == "-bjoin" and channel is not None:
-			while (Attribs.vc_b.value == 1) and Attribs.vc.is_connected():
+			while (Attribs.vc_b.value == 1):
 				try:
 					latest_row = get_current_url()
 					if latest_row is not None:
@@ -133,15 +133,19 @@ def on_message_ind(message):
 
 						Attribs.vc.play(discord.FFmpegPCMAudio("tmp_song.wav"), after=lambda e: print('done', e))
 
-						while Attribs.skip_flag.value == 0:
+						while (Attribs.skip_flag.value == 0) and (Attribs.vc_b.value == 1):
 							time.sleep(0.1)
 
-						Attribs.skip_flag.value = 0
+						if (Attribs.skip_flag.value != 0):
+							Attribs.skip_flag.value = 0
+							set_done(row_id)
+
 						clean_files()
-						set_done(row_id)
 						Attribs.vc.stop()
+
 					else:
 						time.sleep(0.1)
+						
 				except Exception as e:
 					print(e)
 					clean_files()
@@ -176,8 +180,6 @@ async def on_message(message):
 			server = message.guild.voice_client
 			await server.disconnect()
 			Attribs.vc_b.value = 0
-			
-			time.sleep(0.5)
 			
 			clean_files()
 
