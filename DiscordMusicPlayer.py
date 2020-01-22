@@ -111,7 +111,7 @@ def on_message_ind(message):
 			channel = author.voice.channel
 
 		if content == "-bjoin" and channel is not None:
-			while Attribs.vc and Attribs.vc.is_connected():
+			while (Attribs.vc_b.value == 1) and Attribs.vc.is_connected():
 				try:
 					latest_row = get_current_url()
 					if latest_row is not None:
@@ -119,11 +119,11 @@ def on_message_ind(message):
 						url = latest_row[1]
 						url = clean_yt_url(url)
 						
-						p = subprocess.Popen(["youtube-dl", "-q", "-x", "--no-part", "--abort-on-error", "--socket-timeout", "15", "--audio-format", "mp3", "--output", "tmp_song.mp3", url])
-						p.wait()
+						p = subprocess.Popen(["youtube-dl", "-q", "-x", "--no-part", "--abort-on-error", "--socket-timeout", "30", "--audio-format", "mp3", "--output", "tmp_song.mp3", url])
+						p.wait(30)
 
 						p = subprocess.Popen(["ffmpeg", "-i", "tmp_song.mp3", "tmp_song.wav"])
-						p.wait()
+						p.wait(30)
 
 						duration = 0
 						with contextlib.closing(wave.open("tmp_song.wav", "r")) as f:
@@ -133,33 +133,26 @@ def on_message_ind(message):
 
 						Attribs.vc.play(discord.FFmpegPCMAudio("tmp_song.wav"), after=lambda e: print('done', e))
 
-						while Attribs.vc.is_connected() and Attribs.vc.is_playing() and Attribs.skip_flag.value == 0:
-							time.sleep(0.5)
+						while Attribs.skip_flag.value == 0:
+							time.sleep(0.1)
 
 						Attribs.skip_flag.value = 0
 						clean_files()
 						set_done(row_id)
 						Attribs.vc.stop()
 					else:
-						time.sleep(0.5)
+						time.sleep(0.1)
 				except Exception as e:
 					print(e)
 					clean_files()
 					set_done(row_id)
-
-		elif content.startswith("-badd"):
-			url = content.split(" ")
-			if len(url) > 1:
-				send_new_song(url[1])
-
-		elif content == ("-bskip"):
-			Attribs.skip_flag.value = 1
 
 	except Exception as e:
 		print(e)
 
 @client.event
 async def on_message(message):
+
 	try:
 		if message.author == client.user:
 			return
@@ -173,17 +166,28 @@ async def on_message(message):
 
 		if content == "-bjoin":
 			Attribs.vc = await channel.connect()
+			Attribs.vc_b.value = 1
 			p = mp.Process(target = on_message_ind, args = (message,))
 			p.start()
+			p.daemon = True
+			Attribs.player_p = p
+
 		elif content == "-bleave":
 			server = message.guild.voice_client
 			await server.disconnect()
-			Attribs.vc = None
+			Attribs.vc_b.value = 0
+			
+			time.sleep(0.5)
+			
 			clean_files()
 
-		else:
-			p = mp.Process(target = on_message_ind, args = (message,))
-			p.start()
+		elif content.startswith("-badd"):
+			url = content.split(" ")
+			if len(url) > 1:
+				send_new_song(url[1])
+
+		elif content == ("-bskip"):
+			Attribs.skip_flag.value = 1
 
 	except Exception as e:
 		print(e)
