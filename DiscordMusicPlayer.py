@@ -133,15 +133,15 @@ def on_message_ind(message):
 
 						Attribs.vc.play(discord.FFmpegPCMAudio("tmp_song.wav"), after=lambda e: print('done', e))
 
-						while (Attribs.skip_flag.value == 0) and (Attribs.vc_b.value == 1):
+						while (Attribs.skip_flag.value == 0) and (Attribs.vc_b.value == 1) and Attribs.vc.is_playing():
 							time.sleep(0.1)
 
 						if (Attribs.skip_flag.value != 0):
 							Attribs.skip_flag.value = 0
+							Attribs.vc.stop()
 							set_done(row_id)
 
 						clean_files()
-						Attribs.vc.stop()
 
 					else:
 						time.sleep(0.1)
