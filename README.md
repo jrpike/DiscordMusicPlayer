@@ -17,7 +17,7 @@ Install youtube-dl:<br />
 Install Python libraries:<br />
 `$ sudo pip3 install mysql-connector`<br />
 `$ sudo pip3 install mysql-connector-python`<br />
-`$ sudo pip3 install pytube'<br />
+`$ sudo pip3 install pytube`<br />
 
 Setup database:<br />
 `$ sudo mysql -u root`<br />
